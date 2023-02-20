@@ -1,0 +1,50 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xdistributions.cloudfront.keyholesoftware.com
+spec:
+  group: cloudfront.keyholesoftware.com
+  names:
+    kind: XDistribution
+    plural: xdistributions
+  claimNames:
+    kind: Distribution
+    plural: distributions
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              parameters:
+                type: object
+                properties:
+                  region:
+                    type: string
+                  dnsSuffix:
+                    type: string
+                required:
+                - region
+                - dnsSuffix
+            required:
+            - parameters
+          status:
+            type: object
+            properties:
+              bucketArn:
+                description: The arn of the bucket
+                type: string
+              bucketWebsiteEndpoint:
+                description: The websiteEndpoint of the bucket
+                type: string
+              distributionId:
+                description: The id of the CloudFront distribution
+                type: string
+              distributionDomainName:
+                description: The domainName of the CloudFront distribution
+                type: string

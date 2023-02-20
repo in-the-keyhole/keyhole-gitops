@@ -1,0 +1,209 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: cloudfront-distribution
+  labels:
+    provider: aws
+    crossplane.io/xrd: xdistributions.cloudfront.keyholesoftware.com
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
+spec:
+  compositeTypeRef:
+    apiVersion: cloudfront.keyholesoftware.com/v1alpha1
+    kind: XDistribution
+  resources:
+
+  - name: s3_bucket
+    base:
+      apiVersion: s3.aws.upbound.io/v1beta1
+      kind: Bucket
+    patches:
+    - type: FromCompositeFieldPath
+      fromFieldPath: metadata.labels[crossplane.io/claim-name]
+      toFieldPath: metadata.name
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.region
+      toFieldPath: spec.forProvider.region
+    - type: ToCompositeFieldPath
+      fromFieldPath: status.atProvider.arn
+      toFieldPath: status.bucketArn
+    - type: ToCompositeFieldPath
+      fromFieldPath: status.atProvider.websiteEndpoint
+      toFieldPath: status.bucketWebsiteEndpoint
+
+  - name: s3_bucket_policy
+    base:
+      apiVersion: s3.aws.upbound.io/v1beta1
+      kind: BucketPolicy
+      spec:
+        forProvider:
+          policy: > # will be patched with resolved values
+            {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                    "Sid": "PublicReadGetObject",
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": "s3:GetObject",
+                    "Resource": "patchWithBucketArn/*"
+                }
+              ]
+            }
+    patches:
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.region
+      toFieldPath: spec.forProvider.region
+    - type: FromCompositeFieldPath
+      fromFieldPath: metadata.labels[crossplane.io/claim-name]
+      toFieldPath: spec.forProvider.bucketRef.name
+    - type: CombineFromComposite
+      combine:
+        variables:
+        - fromFieldPath: status.bucketArn
+        strategy: string
+        string:
+          fmt: >
+            {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                    "Sid": "PublicReadGetObject",
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": "s3:GetObject",
+                    "Resource": "%s/*"
+                }
+              ]
+            }
+      toFieldPath: spec.forProvider.policy
+
+  - name: s3_bucket_website_configuration
+    base:
+      apiVersion: s3.aws.upbound.io/v1beta1
+      kind: BucketWebsiteConfiguration
+      spec:
+        forProvider:
+          errorDocument:
+            - key: error.html
+          indexDocument:
+            - suffix: index.html
+    patches:
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.region
+      toFieldPath: spec.forProvider.region
+    - type: FromCompositeFieldPath
+      fromFieldPath: metadata.labels[crossplane.io/claim-name]
+      toFieldPath: spec.forProvider.bucketRef.name
+
+  - name: distribution
+    base:
+      apiVersion: cloudfront.aws.upbound.io/v1beta1
+      kind: Distribution
+      spec:
+        forProvider:
+          aliases:
+            - will.be.patched
+          defaultCacheBehavior:
+          - allowedMethods:
+            - DELETE
+            - GET
+            - HEAD
+            - OPTIONS
+            - PATCH
+            - POST
+            - PUT
+            cachedMethods:
+            - GET
+            - HEAD
+            defaultTtl: 3600
+            forwardedValues:
+            - cookies:
+              - forward: none
+              queryString: false
+            maxTtl: 86400
+            minTtl: 0
+            targetOriginId: s3_origin
+            viewerProtocolPolicy: redirect-to-https
+            compress: true
+          defaultRootObject: index.html
+          enabled: true
+          isIpv6Enabled: true
+          origin:
+          - originId: s3_origin
+            domainName: will.be.patched
+            customOriginConfig:
+            - httpPort: 80
+              httpsPort: 443
+              originProtocolPolicy: http-only
+              originSslProtocols:
+                - TLSv1
+                - TLSv1.1
+                - TLSv1.2
+          priceClass: PriceClass_100
+          restrictions:
+          - geoRestriction:
+            - locations:
+              - US
+              restrictionType: whitelist
+          viewerCertificate:
+          - cloudfrontDefaultCertificate: false
+            acmCertificateArn: arn:aws:acm:us-east-1:999330780379:certificate/95bc1cd7-4d73-4499-9a64-8f883d551c56
+            sslSupportMethod: sni-only
+    patches:
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.region
+      toFieldPath: spec.forProvider.region
+    - type: FromCompositeFieldPath
+      fromFieldPath: metadata.labels[crossplane.io/claim-name]
+      toFieldPath: spec.forProvider.bucketRef.name
+    - type: CombineFromComposite
+      combine:
+        variables:
+        - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+        - fromFieldPath: spec.parameters.dnsSuffix
+        strategy: string
+        string:
+          fmt: "%s.%s"
+      toFieldPath: spec.forProvider.aliases[0]
+    - type: CombineFromComposite
+      combine:
+        variables:
+        - fromFieldPath: status.bucketWebsiteEndpoint
+        strategy: string
+        string:
+          fmt: "%s"
+      toFieldPath: spec.forProvider.origin[0].domainName
+    - type: ToCompositeFieldPath
+      fromFieldPath: status.atProvider.id
+      toFieldPath: status.distributionId
+    - type: ToCompositeFieldPath
+      fromFieldPath: status.atProvider.domainName
+      toFieldPath: status.distributionDomainName
+
+  - name: route53_record
+    base:
+      apiVersion: route53.aws.upbound.io/v1beta1
+      kind: Record
+      spec:
+        forProvider:
+          type: A
+          zoneId: Z01786413D3NWMNM4V0CR
+          name: will.be.patched
+          region: us-east-1
+          alias:
+            - name: patch.keyhole.institute
+              zoneId: Z2FDTNDATAQYW2
+              evaluateTargetHealth: false
+    patches:
+    - type: FromCompositeFieldPath
+      fromFieldPath: status.distributionDomainName
+      toFieldPath: spec.forProvider.alias[0].name
+    - type: CombineFromComposite
+      combine:
+        variables:
+        - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+        - fromFieldPath: spec.parameters.dnsSuffix
+        strategy: string
+        string:
+          fmt: "%s.%s"
+      toFieldPath: spec.forProvider.name
