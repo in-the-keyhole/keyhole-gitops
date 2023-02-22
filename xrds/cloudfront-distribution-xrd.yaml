@@ -2,6 +2,8 @@ apiVersion: apiextensions.crossplane.io/v1
 kind: CompositeResourceDefinition
 metadata:
   name: xdistributions.cloudfront.keyholesoftware.com
+  labels:
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
 spec:
   group: cloudfront.keyholesoftware.com
   names:
@@ -38,6 +40,9 @@ spec:
             properties:
               bucketArn:
                 description: The arn of the bucket
+                type: string
+              bucketName:
+                description: The name (id) of the bucket
                 type: string
               bucketWebsiteEndpoint:
                 description: The websiteEndpoint of the bucket

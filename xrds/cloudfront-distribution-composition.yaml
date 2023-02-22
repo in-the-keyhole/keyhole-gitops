@@ -5,7 +5,6 @@ metadata:
   labels:
     provider: aws
     crossplane.io/xrd: xdistributions.cloudfront.keyholesoftware.com
-    argocd.argoproj.io/compare-options: IgnoreExtraneous
 spec:
   compositeTypeRef:
     apiVersion: cloudfront.keyholesoftware.com/v1alpha1
@@ -26,6 +25,9 @@ spec:
     - type: ToCompositeFieldPath
       fromFieldPath: status.atProvider.arn
       toFieldPath: status.bucketArn
+    - type: ToCompositeFieldPath
+      fromFieldPath: status.atProvider.id
+      toFieldPath: status.bucketName
     - type: ToCompositeFieldPath
       fromFieldPath: status.atProvider.websiteEndpoint
       toFieldPath: status.bucketWebsiteEndpoint
@@ -207,3 +209,112 @@ spec:
         string:
           fmt: "%s.%s"
       toFieldPath: spec.forProvider.name
+
+  # - name: github_action_secret
+  #   base:
+  #     apiVersion: tf.upbound.io/v1beta1
+  #     kind: Workspace
+  #     spec:
+  #       forProvider:
+  #         module: |
+  #           resource "github_actions_secret" "cloudfront_distribution_id" {
+  #             repository      = "keyhole-demo"
+  #             secret_name     = "CLOUDFRONT_DISTRIBUTION_ID"
+  #             plaintext_value = "KDAJFDAKLFDLKAJ"
+  #           }
+
+  #           output "created_at" {
+  #             value = github_actions_secret.cloudfront_distribution_id.created_at
+  #           }
+  #         source: Inline
+
+  # - name: github_action_secret_from_env
+  #   base:
+  #     apiVersion: tf.upbound.io/v1beta1
+  #     kind: Workspace
+  #     spec:
+  #       forProvider:
+  #         module: ""
+  #         source: Inline
+  #   patches:
+  #   # - type: FromCompositeFieldPath
+  #   #   fromFieldPath: metadata.labels[crossplane.io/claim-name]
+  #   #   toFieldPath: metadata.name
+  #   - type: CombineFromEnvironment
+  #     combine:
+  #       variables:
+  #       - fromFieldPath: 
+  #       - fromFieldPath: 
+  #       - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+  #       - fromFieldPath:
+  #       strategy: string
+  #       string:
+  #         fmt: >
+  #           resource "github_actions_secret" "aws_access_key_id" {
+  #             repository      = "%s"
+  #             secret_name     = "AWS_ACCESS_KEY_ID"
+  #             plaintext_value = "%s"
+  #           }
+  #           resource "github_actions_secret" "aws_secret_access_key" {
+  #             repository      = "%s"
+  #             secret_name     = "AWS_SECRET_ACCESS_KEY"
+  #             plaintext_value = "%s"
+  #           }
+  #     toFieldPath: spec.forProvider.module
+
+  - name: github_action_secret_from_composite
+    base:
+      apiVersion: tf.upbound.io/v1beta1
+      kind: Workspace
+      spec:
+        forProvider:
+          module: ""
+          source: Inline
+    patches:
+    # - type: FromCompositeFieldPath
+    #   fromFieldPath: metadata.labels[crossplane.io/claim-name]
+    #   toFieldPath: metadata.name
+    - type: CombineFromComposite
+      combine:
+        variables:
+        - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+        - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+        - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+        - fromFieldPath: spec.parameters.region
+        - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+        - fromFieldPath: status.bucketName
+        - fromFieldPath: metadata.labels[crossplane.io/claim-name]
+        - fromFieldPath: status.distributionId
+        strategy: string
+        string:
+          fmt: >
+            resource "github_actions_secret" "aws_access_key_id" {
+              repository      = "%s"
+              secret_name     = "AWS_ACCESS_KEY_ID"
+              encrypted_value = "8bPLmKt0qX0wQomG87RgShGADfXotCNxlk5lutgfwH2evadYPLaIazbsuwFvZT/F7WDuo2D0PTyt+PlFIunRX6y/cfo="
+            }
+
+            resource "github_actions_secret" "aws_secret_access_key" {
+              repository      = "%s"
+              secret_name     = "AWS_SECRET_ACCESS_KEY"
+              encrypted_value = "5yFmKiXYoSNDciJKimXGZk4fi47J1/dPIZahF+kBIjWIquqNliFMuZ3ZZANhdpyT2LZLCtGkk3wjHL05NfvYRAO7ED/ADYQ9YltwoVkQW1vEZMy/cmepvQ=="
+            }
+
+            resource "github_actions_secret" "aws_default_region" {
+              repository      = "%s"
+              secret_name     = "AWS_DEFAULT_REGION"
+              plaintext_value = "%s"
+            }
+
+            resource "github_actions_secret" "s3_bucket" {
+              repository      = "%s"
+              secret_name     = "S3_BUCKET"
+              plaintext_value = "%s"
+            }
+
+            resource "github_actions_secret" "cloudfront_distribution_id" {
+              repository      = "%s"
+              secret_name     = "CLOUDFRONT_DISTRIBUTION_ID"
+              plaintext_value = "%s"
+            }
+      toFieldPath: spec.forProvider.module
