@@ -2,8 +2,6 @@ apiVersion: apiextensions.crossplane.io/v1
 kind: CompositeResourceDefinition
 metadata:
   name: xdistributions.cloudfront.keyholesoftware.com
-  labels:
-    argocd.argoproj.io/compare-options: IgnoreExtraneous
 spec:
   group: cloudfront.keyholesoftware.com
   names:
