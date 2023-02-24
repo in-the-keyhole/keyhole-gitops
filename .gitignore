@@ -1,1 +1,8 @@
 temp
+xrds
+demo/podinfo-deployment.yaml
+providers/.git-credentials
+providers/provider-aws-config.yaml
+providers/provider-aws.yaml
+providers/provider-terraform-config.yaml
+providers/provider-terraform.yaml
