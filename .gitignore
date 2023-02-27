@@ -1,4 +1,6 @@
 temp
 demo
-providers
 xrds
+providers/aws-secret.yaml
+providers/.git-credentials
+providers/git-credentials-secret.yaml

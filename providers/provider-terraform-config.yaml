@@ -1,0 +1,35 @@
+# see https://marketplace.upbound.io/providers/upbound/provider-terraform/v0.4.0/docs/configuration
+apiVersion: tf.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: default
+spec:
+  credentials:
+  - filename: .git-credentials
+    source: Secret
+    secretRef:
+      namespace: upbound-system
+      name: git-credentials
+      key: .git-credentials
+  configuration: |
+      terraform {
+        required_providers {
+          github = {
+            source = "integrations/github"
+            version = "5.18.0"
+          }
+        }
+      }
+
+      provider "github" {
+        owner = "in-the-keyhole"
+      }
+
+      // Modules _must_ use remote state. The provider does not persist state.
+      terraform {
+        backend "kubernetes" {
+          secret_suffix     = "providerconfig-default"
+          namespace         = "upbound-system"
+          in_cluster_config = true
+        }
+      }
