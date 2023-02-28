@@ -5,3 +5,4 @@ providers/aws-secret.yaml
 providers/.git-credentials
 providers/git-credentials-secret.yaml
 sealed-secret.pem
+providers/provider-terraform-config.yaml
