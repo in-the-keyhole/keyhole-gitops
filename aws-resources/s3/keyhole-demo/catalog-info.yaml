@@ -1,0 +1,18 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: "keyhole-demo"
+  description: "demo bucket"
+  annotations:
+    github.com/project-slug: undefined/undefined
+    backstage.io/techdocs-ref: dir:.
+    argocd/app-name: keyhole-demo
+  links:
+    - url: https://keyhole-demo.keyhole.institute
+      title: keyhole-demo
+      icon: dashboard
+spec:
+  type: website
+  system: demo
+  lifecycle: production
+  owner: "developers"

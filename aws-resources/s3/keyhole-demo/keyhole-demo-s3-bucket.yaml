@@ -1,0 +1,8 @@
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: Bucket
+metadata:
+  namespace: default
+  name: keyhole-demo
+spec:
+  forProvider:
+    region: us-east-2
