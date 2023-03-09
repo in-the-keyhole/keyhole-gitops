@@ -11,6 +11,10 @@ spec:
     path: aws-resources
     repoURL: git@github.com:in-the-keyhole/keyhole-gitops.git
     targetRevision: HEAD
+    directory:
+      recurse: true
+      jsonnet: {}
   syncPolicy: 
     automated:
       prune: true
+      selfHeal: true
