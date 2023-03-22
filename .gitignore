@@ -6,3 +6,7 @@ providers/.git-credentials
 providers/git-credentials-secret.yaml
 sealed-secret.pem
 providers/provider-terraform-config.yaml
+argocd/gitops-repo.yaml
+argocd/sealed-secrets-repo.yaml
+sealed-secret-local.pem
+sealed-secret-vultr.pem
